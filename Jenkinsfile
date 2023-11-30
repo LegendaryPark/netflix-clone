@@ -7,6 +7,11 @@ pipeline{
 
     environment{
         SCANNER_HOME=tool 'sonar-scanner'
+        APP_NAME = "netflix-clone"
+        DOCKER_USER = "jpdylan89"
+        DOCKER_PASS = "dockerhub"
+        IMAGE_NAME = "${DOCKER_USER}"  + "/" + "${APP_NAME}"
+        IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
     }
 
     stages{
@@ -45,6 +50,20 @@ pipeline{
         stage('TRIVY FS SCAN'){
             steps{
                 sh "trivy fs . > trivyfs.txt"
+            }
+        }
+        stage('Build & Push Docker Image'){
+            steps{
+                script{
+                    docker.withRegistry('', DOCKER_PASS){
+                        docker_image = docker.build "${IMAGE_NAME}"
+                    }
+
+                    docker.withRegistry('', DOCKER_PASS){
+                        docker_image.push("${IMAGE_TAG}")
+                        docker_image.push("latest")
+                    }
+                }
             }
         }
     }
